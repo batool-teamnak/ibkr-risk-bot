@@ -1,0 +1,43 @@
+import asyncio
+import copy
+import math
+import unittest
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
+from eventkit import Event
+from ib_insync import Contract, Order, OrderStatus, Position, Trade
+from src.bot import RiskBot
+from src.state import ManagedPosition, State
+
+class TradingTests(unittest.TestCase):
+    def setUp(self):
+        self.cfg = {'risk':{'tp_pct':1.0,'sl_pct':2.0,'trigger_pct':3.0,'trail_pct':1.0},
+                    'bot':{'poll_interval':1,'order_timeout':1,'protection_check_interval':30}}
+        self.ib = MagicMock()
+        self.ib.orderStatusEvent = Event()
+        self.ib.positionEvent = Event()
+        self.ib.errorEvent = Event()
+        self.ib.positions.return_value = []
+        self.ib.openTrades.return_value = []
+        self.ib.trades.return_value = []
+        self.next_id = 100
+        def place(contract, order):
+            self.next_id += 1
+            order.orderId = self.next_id
+            return Trade(contract,order,OrderStatus(orderId=self.next_id,status='Submitted'))
+        self.ib.placeOrder.side_effect = place
+        self.bot = RiskBot(self.ib,self.cfg)
+        self.mp = ManagedPosition(1,'AAPL','STK','SMART','USD',10,100)
+
+    def trade(self, oid=1, kind='LMT', status='Submitted', oca='', conid=1):
+        return Trade(Contract(conId=conid,symbol='AAPL'),
+                     Order(orderId=oid,orderType=kind,action='SELL',ocaGroup=oca),
+                     OrderStatus(orderId=oid,status=status))
+
+
+    def test_invalid_risk_percentages_fail_startup(self):
+        for value in (0,-1,float('nan'),float('inf'),100):
+            cfg = copy.deepcopy(self.cfg)
+            cfg['risk']['sl_pct'] = value
+            with self.assertRaises(ValueError):
+                RiskBot(self.ib,cfg)

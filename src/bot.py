@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import time
 from datetime import datetime, time as dtime
 from zoneinfo import ZoneInfo
@@ -22,6 +23,9 @@ class RiskBot:
         r = cfg["risk"]
         self.tp_pct: float = r["tp_pct"]
         self.sl_pct: float = r["sl_pct"]
+        for name, value in (("tp_pct", self.tp_pct), ("sl_pct", self.sl_pct)):
+            if not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 < value < 100:
+                raise ValueError(f"{name} must be between 0 and 100 percent")
 
         # Multi-level trailing stop: if trailing_levels is defined, use it;
         # otherwise fall back to single trigger_pct/trail_pct for backward compat.

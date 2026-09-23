@@ -53,6 +53,7 @@ def _make_config(trailing_levels=None, protection_interval=30):
         "risk": {"tp_pct": 0.1, "sl_pct": 15.0},
         "bot": {
             "poll_interval": 5,
+            "trail_rth_only": False,
             "order_timeout": 2,
             "protection_check_interval": protection_interval,
         },
