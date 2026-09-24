@@ -41,3 +41,10 @@ class TradingTests(unittest.TestCase):
             cfg['risk']['sl_pct'] = value
             with self.assertRaises(ValueError):
                 RiskBot(self.ib,cfg)
+
+    def test_invalid_timing_configuration_is_rejected(self):
+        for name,value in (('poll_interval',0),('order_timeout',-1),('protection_check_interval',float('nan'))):
+            cfg = copy.deepcopy(self.cfg)
+            cfg['bot'][name] = value
+            with self.assertRaises(ValueError):
+                RiskBot(self.ib,cfg)

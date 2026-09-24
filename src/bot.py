@@ -40,6 +40,11 @@ class RiskBot:
         self.poll_interval: int = b["poll_interval"]
         self.order_timeout: int = b["order_timeout"]
         self.protection_check_interval: int = b.get("protection_check_interval", 30)
+        for name, value in (("poll_interval", self.poll_interval), ("order_timeout", self.order_timeout)):
+            if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"{name} must be positive and finite")
+        if not isinstance(self.protection_check_interval, (int, float)) or not math.isfinite(self.protection_check_interval) or self.protection_check_interval < 0:
+            raise ValueError("protection_check_interval must be finite and nonnegative")
         self.trail_rth_only: bool = b.get("trail_rth_only", True)
 
         # conid → ManagedPosition
