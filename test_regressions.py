@@ -48,3 +48,12 @@ class TradingTests(unittest.TestCase):
             cfg['bot'][name] = value
             with self.assertRaises(ValueError):
                 RiskBot(self.ib,cfg)
+
+    def test_invalid_trailing_levels_are_rejected(self):
+        for levels in ([{'trigger':3,'trailing':0}],
+                       [{'trigger':3,'trailing':1},{'trigger':3,'trailing':2}],
+                       [{'trigger':float('nan'),'trailing':1}]):
+            cfg = copy.deepcopy(self.cfg)
+            cfg['risk']['trailing_levels'] = levels
+            with self.assertRaises(ValueError):
+                RiskBot(self.ib,cfg)

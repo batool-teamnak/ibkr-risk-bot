@@ -36,6 +36,17 @@ class RiskBot:
                 {"trigger": r["trigger_pct"], "trailing": r["trail_pct"]}
             ]
 
+        seen = set()
+        for level in self.trailing_levels:
+            trigger, trailing = level["trigger"], level["trailing"]
+            if not isinstance(trigger, (int, float)) or not math.isfinite(trigger) or trigger <= 0:
+                raise ValueError("trailing triggers must be positive and finite")
+            if not isinstance(trailing, (int, float)) or not math.isfinite(trailing) or not 0 < trailing < 100:
+                raise ValueError("trailing percentages must be between 0 and 100")
+            if trigger in seen:
+                raise ValueError("trailing triggers must be unique")
+            seen.add(trigger)
+
         b = cfg["bot"]
         self.poll_interval: int = b["poll_interval"]
         self.order_timeout: int = b["order_timeout"]
