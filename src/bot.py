@@ -603,9 +603,9 @@ class RiskBot:
 
         ticker = self._tickers[conid]
         price = ticker.last
-        if price is None or price != price:  # NaN check
+        if not isinstance(price, (int, float)) or not math.isfinite(price) or price <= 0:
             price = ticker.close
-        if price is None or price != price:
+        if not isinstance(price, (int, float)) or not math.isfinite(price) or price <= 0:
             return None
         return price
 

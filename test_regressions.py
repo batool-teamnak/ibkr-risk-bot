@@ -57,3 +57,10 @@ class TradingTests(unittest.TestCase):
             cfg['risk']['trailing_levels'] = levels
             with self.assertRaises(ValueError):
                 RiskBot(self.ib,cfg)
+
+    def test_invalid_market_prices_do_not_trigger(self):
+        for price in (0,-1,float('inf'),float('nan'),None):
+            self.bot._tickers[1] = SimpleNamespace(last=price,close=float('nan'))
+            self.assertIsNone(self.bot._get_last_price(self.mp))
+        self.bot._tickers[1] = SimpleNamespace(last=float('nan'),close=101)
+        self.assertEqual(self.bot._get_last_price(self.mp),101)
