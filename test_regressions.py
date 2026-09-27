@@ -64,3 +64,10 @@ class TradingTests(unittest.TestCase):
             self.assertIsNone(self.bot._get_last_price(self.mp))
         self.bot._tickers[1] = SimpleNamespace(last=float('nan'),close=101)
         self.assertEqual(self.bot._get_last_price(self.mp),101)
+
+    def test_futures_routing_uses_contract_exchange(self):
+        self.mp.sec_type = 'FUT'
+        self.mp.exchange = 'CME'
+        self.assertEqual(self.bot._order_contract(self.mp).exchange,'CME')
+        self.mp.sec_type = 'STK'
+        self.assertEqual(self.bot._order_contract(self.mp).exchange,'SMART')

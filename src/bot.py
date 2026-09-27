@@ -578,7 +578,7 @@ class RiskBot:
         c.conId    = mp.conid
         c.symbol   = mp.symbol
         c.secType  = mp.sec_type
-        c.exchange = "SMART"
+        c.exchange = "SMART" if mp.sec_type in ("STK", "OPT") else mp.exchange
         c.currency = mp.currency
         return c
 
