@@ -71,3 +71,13 @@ class TradingTests(unittest.TestCase):
         self.assertEqual(self.bot._order_contract(self.mp).exchange,'CME')
         self.mp.sec_type = 'STK'
         self.assertEqual(self.bot._order_contract(self.mp).exchange,'SMART')
+
+    def test_same_second_protection_groups_are_unique(self):
+        groups = []
+        with patch('src.bot.asyncio.sleep',new=AsyncMock()):
+            for _ in range(2):
+                self.mp.state = State.NEW
+                asyncio.run(self.bot._place_tp_sl(self.mp))
+                groups.append(self.mp.oca_group)
+        self.assertNotEqual(*groups)
+        self.assertTrue(all(g.startswith('OCA_1_') for g in groups))

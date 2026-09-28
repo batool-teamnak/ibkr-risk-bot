@@ -540,7 +540,7 @@ class TestPlaceTPSL:
         assert mp.state == State.MONITORING
         assert mp.tp_order_id is not None
         assert mp.sl_order_id is not None
-        assert mp.oca_group.startswith("OCA_AAPL_")
+        assert mp.oca_group.startswith("OCA_1_")
 
     @pytest.mark.asyncio
     async def test_place_tp_sl_skips_zero_entry(self):

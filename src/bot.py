@@ -4,6 +4,7 @@ import asyncio
 import logging
 import math
 import time
+from uuid import uuid4
 from datetime import datetime, time as dtime
 from zoneinfo import ZoneInfo
 from typing import Dict, Optional
@@ -294,7 +295,7 @@ class RiskBot:
             return
 
         contract  = self._order_contract(mp)
-        oca_group = f"OCA_{mp.symbol}_{int(time.time())}"
+        oca_group = f"OCA_{mp.conid}_{uuid4().hex}"
         tp_price  = mp.tp_price(self.tp_pct)
         sl_price  = mp.sl_price(self.sl_pct)
 
