@@ -357,6 +357,8 @@ class RiskBot:
             orderType     = "LMT",
             totalQuantity = mp.abs_qty,
             lmtPrice      = tp_price,
+            ocaGroup      = mp.oca_group,
+            ocaType       = 1 if mp.oca_group else 0,
             tif           = "GTC",
             transmit      = True,
         )

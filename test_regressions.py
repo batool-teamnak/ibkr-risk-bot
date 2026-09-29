@@ -81,3 +81,10 @@ class TradingTests(unittest.TestCase):
                 groups.append(self.mp.oca_group)
         self.assertNotEqual(*groups)
         self.assertTrue(all(g.startswith('OCA_1_') for g in groups))
+
+    def test_recovered_take_profit_preserves_oca_link(self):
+        self.mp.oca_group = 'OCA_existing'
+        with patch('src.bot.asyncio.sleep',new=AsyncMock()):
+            asyncio.run(self.bot._place_missing_tp(self.mp))
+        order = self.ib.placeOrder.call_args.args[1]
+        self.assertEqual((order.ocaGroup,order.ocaType),('OCA_existing',1))
