@@ -428,7 +428,9 @@ class RiskBot:
             # Safety sweep: cancel ANY remaining LMT or STP orders for this
             # contract before placing the trailing stop. This catches untracked
             # orders from previous sessions that recovery may have missed.
-            await self._cancel_all_protective_orders(mp)
+            if not await self._cancel_all_protective_orders(mp):
+                mp.state = State.MONITORING
+                return
             first_trail_pct = self.trailing_levels[0]["trailing"]
             await self._place_trailing_stop(mp, first_trail_pct, level=0)
 
@@ -453,9 +455,11 @@ class RiskBot:
             self.ib.cancelOrder(t.order)
         # Wait for all cancellations concurrently
         if to_cancel:
-            await asyncio.gather(
+            results = await asyncio.gather(
                 *[self._wait_cancel(t.order.orderId) for t in to_cancel]
             )
+            return all(results)
+        return True
 
     async def _place_trailing_stop(self, mp: ManagedPosition, trail_pct: float, level: int = 0):
         contract = self._order_contract(mp)
@@ -528,7 +532,8 @@ class RiskBot:
                         "ok" if sl_ok else "MISSING",
                     )
                     # Cancel any remaining orders for a clean slate
-                    await self._cancel_all_protective_orders(mp)
+                    if not await self._cancel_all_protective_orders(mp):
+                        continue
                     mp.tp_order_id = None
                     mp.sl_order_id = None
                     mp.tp_cancelled = False

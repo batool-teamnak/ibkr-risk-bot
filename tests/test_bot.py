@@ -72,6 +72,11 @@ def _make_bot(cfg=None, open_trades=None):
     ib = MagicMock()
     ib.openTrades.return_value = open_trades or []
     ib.positions.return_value = []
+    def cancel(order):
+        for trade in ib.openTrades():
+            if trade.order.orderId == order.orderId:
+                trade.orderStatus.status = "Cancelled"
+    ib.cancelOrder.side_effect = cancel
     # Make placeOrder return a FakeTrade with a proper orderId
     _next_id = [100]
     def fake_place(contract, order):

@@ -88,3 +88,11 @@ class TradingTests(unittest.TestCase):
             asyncio.run(self.bot._place_missing_tp(self.mp))
         order = self.ib.placeOrder.call_args.args[1]
         self.assertEqual((order.ocaGroup,order.ocaType),('OCA_existing',1))
+
+    def test_failed_residual_cancel_prevents_new_trailing_stop(self):
+        self.mp.tp_cancelled = self.mp.sl_cancelled = True
+        self.ib.openTrades.return_value = [self.trade(kind='STP')]
+        with patch.object(self.bot,'_wait_cancel',new=AsyncMock(return_value=False)):
+            asyncio.run(self.bot._cancel_oca_and_trail(self.mp))
+        self.ib.placeOrder.assert_not_called()
+        self.assertEqual(self.mp.state,State.MONITORING)
