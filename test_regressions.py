@@ -96,3 +96,8 @@ class TradingTests(unittest.TestCase):
             asyncio.run(self.bot._cancel_oca_and_trail(self.mp))
         self.ib.placeOrder.assert_not_called()
         self.assertEqual(self.mp.state,State.MONITORING)
+
+    def test_completed_trade_is_available_for_cancellation_checks(self):
+        filled = self.trade(oid=7,status='Filled')
+        self.ib.trades.return_value = [filled]
+        self.assertIs(self.bot._find_trade(7),filled)

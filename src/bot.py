@@ -591,7 +591,7 @@ class RiskBot:
         return c
 
     def _find_trade(self, order_id: int) -> Optional[Trade]:
-        for t in self.ib.openTrades():
+        for t in list(self.ib.trades()) + list(self.ib.openTrades()):
             if t.order.orderId == order_id:
                 return t
         return None
