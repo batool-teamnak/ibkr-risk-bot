@@ -101,3 +101,9 @@ class TradingTests(unittest.TestCase):
         filled = self.trade(oid=7,status='Filled')
         self.ib.trades.return_value = [filled]
         self.assertIs(self.bot._find_trade(7),filled)
+
+    def test_filled_protection_is_not_reported_as_cancelled(self):
+        self.ib.trades.return_value = [self.trade(oid=7,status='Filled')]
+        self.assertFalse(asyncio.run(self.bot._wait_cancel(7)))
+        self.ib.trades.return_value = [self.trade(oid=7,status='Cancelled')]
+        self.assertTrue(asyncio.run(self.bot._wait_cancel(7)))

@@ -630,6 +630,8 @@ class RiskBot:
             trade = self._find_trade(order_id)
             if trade is None:
                 return True  # gone from open trades → confirmed
+            if trade.orderStatus.status == "Filled":
+                return False
             if trade.orderStatus.status in terminal:
                 return True
             await asyncio.sleep(0.5)
