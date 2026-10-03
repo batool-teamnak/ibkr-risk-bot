@@ -162,7 +162,12 @@ class RiskBot:
                     "RECOVERY: %s → MONITORING (TP=%s SL=%s)",
                     mp, mp.tp_order_id, mp.sl_order_id,
                 )
-                if mp.tp_order_id is None:
+                if mp.sl_order_id is None:
+                    if await self._cancel_all_protective_orders(mp):
+                        mp.tp_order_id = None
+                        mp.oca_group = ""
+                        mp.state = State.NEW
+                elif mp.tp_order_id is None:
                     log.warning(
                         "RECOVERY: %s has no TP order — will place fresh TP on next tick.",
                         mp.symbol,

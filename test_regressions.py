@@ -107,3 +107,13 @@ class TradingTests(unittest.TestCase):
         self.assertFalse(asyncio.run(self.bot._wait_cancel(7)))
         self.ib.trades.return_value = [self.trade(oid=7,status='Cancelled')]
         self.assertTrue(asyncio.run(self.bot._wait_cancel(7)))
+
+    def test_tp_only_recovery_rebuilds_missing_stop(self):
+        contract = Contract(conId=1,symbol='AAPL',secType='STK',exchange='SMART',currency='USD')
+        self.ib.positions.return_value = [Position('DU1',contract,10,100)]
+        self.ib.openTrades.return_value = [self.trade(oid=9,oca='OCA_old')]
+        with patch('src.bot.asyncio.sleep',new=AsyncMock()), patch.object(self.bot,'_wait_cancel',new=AsyncMock(return_value=True)):
+            asyncio.run(self.bot._recover())
+        recovered = self.bot._positions[1]
+        self.assertEqual(recovered.state,State.NEW)
+        self.assertIsNone(recovered.tp_order_id)
