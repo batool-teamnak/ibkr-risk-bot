@@ -117,3 +117,10 @@ class TradingTests(unittest.TestCase):
         recovered = self.bot._positions[1]
         self.assertEqual(recovered.state,State.NEW)
         self.assertIsNone(recovered.tp_order_id)
+
+    def test_orphan_sweep_preserves_unrelated_manual_entries(self):
+        manual = self.trade(oid=5,oca='')
+        protective = self.trade(oid=6,kind='STP',oca='OCA_old')
+        self.ib.openTrades.return_value = [manual,protective]
+        asyncio.run(self.bot._cancel_orphan_orders(set()))
+        self.ib.cancelOrder.assert_called_once_with(protective.order)

@@ -61,6 +61,7 @@ class RiskBot:
 
         # conid → ManagedPosition
         self._positions: Dict[int, ManagedPosition] = {}
+        self._owned_order_ids = set()
 
         # conid → Ticker (market data subscriptions, one per position)
         self._tickers: Dict[int, Ticker] = {}
@@ -176,6 +177,7 @@ class RiskBot:
             else:
                 log.info("RECOVERY: %s → NEW (will place TP/SL)", mp)
 
+            self._owned_order_ids.update(oid for oid in (mp.tp_order_id, mp.sl_order_id, mp.trail_order_id) if oid is not None)
             self._positions[conid] = mp
 
     # ── Portfolio scan ───────────────────────────────────────────────────────
@@ -211,6 +213,7 @@ class RiskBot:
         orphans = [
             t for t in self.ib.openTrades()
             if t.contract.conId not in active_conids
+            and (t.order.ocaGroup.startswith("OCA_") or t.order.orderId in self._owned_order_ids)
             and t.order.orderType in ("LMT", "STP", "TRAIL")
             and t.orderStatus.status not in terminal
         ]
@@ -332,7 +335,9 @@ class RiskBot:
 
         mp.oca_group   = oca_group
         mp.tp_order_id = tp_trade.order.orderId
+        self._owned_order_ids.add(mp.tp_order_id)
         mp.sl_order_id = sl_trade.order.orderId
+        self._owned_order_ids.add(mp.sl_order_id)
         mp.state       = State.MONITORING
 
         log.info(
@@ -371,6 +376,7 @@ class RiskBot:
         await asyncio.sleep(1)
 
         mp.tp_order_id = tp_trade.order.orderId
+        self._owned_order_ids.add(mp.tp_order_id)
         mp.state       = State.MONITORING
 
         log.info(
@@ -480,6 +486,7 @@ class RiskBot:
         await asyncio.sleep(1)
 
         mp.trail_order_id    = trail_trade.order.orderId
+        self._owned_order_ids.add(mp.trail_order_id)
         mp.current_trail_level = level
         mp.state             = State.TRAILING
 
