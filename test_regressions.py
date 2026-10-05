@@ -124,3 +124,8 @@ class TradingTests(unittest.TestCase):
         self.ib.openTrades.return_value = [manual,protective]
         asyncio.run(self.bot._cancel_orphan_orders(set()))
         self.ib.cancelOrder.assert_called_once_with(protective.order)
+
+    def test_api_cancelled_protection_is_inactive(self):
+        self.ib.trades.return_value = [self.trade(oid=8,status='ApiCancelled')]
+        self.assertFalse(self.bot._is_order_active(8))
+        self.assertTrue(asyncio.run(self.bot._wait_cancel(8)))

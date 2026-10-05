@@ -209,7 +209,7 @@ class RiskBot:
         has an active position. Prevents accidental short positions from
         leftover stop orders after a position is closed.
         """
-        terminal = {"Cancelled", "Inactive", "Filled"}
+        terminal = {"Cancelled", "ApiCancelled", "Inactive", "Filled"}
         orphans = [
             t for t in self.ib.openTrades()
             if t.contract.conId not in active_conids
@@ -451,7 +451,7 @@ class RiskBot:
         Called immediately before placing the trailing stop to guarantee a
         clean slate — no stale stop or limit orders are left active.
         """
-        terminal = {"Cancelled", "Inactive", "Filled"}
+        terminal = {"Cancelled", "ApiCancelled", "Inactive", "Filled"}
         to_cancel = [
             t for t in self.ib.openTrades()
             if t.contract.conId == mp.conid
@@ -577,7 +577,7 @@ class RiskBot:
     def _is_order_active(self, order_id: Optional[int]) -> bool:
         if order_id is None:
             return False
-        terminal = {"Cancelled", "Inactive", "Filled"}
+        terminal = {"Cancelled", "ApiCancelled", "Inactive", "Filled"}
         trade = self._find_trade(order_id)
         if trade is None:
             return False
@@ -637,7 +637,7 @@ class RiskBot:
     async def _wait_cancel(self, order_id: int) -> bool:
         """Poll until the order is confirmed cancelled (or filled) or timeout."""
         deadline = time.monotonic() + self.order_timeout
-        terminal = {"Cancelled", "Inactive", "Filled"}
+        terminal = {"Cancelled", "ApiCancelled", "Inactive", "Filled"}
         while time.monotonic() < deadline:
             trade = self._find_trade(order_id)
             if trade is None:
