@@ -129,3 +129,11 @@ class TradingTests(unittest.TestCase):
         self.ib.trades.return_value = [self.trade(oid=8,status='ApiCancelled')]
         self.assertFalse(self.bot._is_order_active(8))
         self.assertTrue(asyncio.run(self.bot._wait_cancel(8)))
+
+    def test_trigger_requires_valid_position_and_price(self):
+        for price in (float('inf'),float('nan'),-1,None):
+            self.assertFalse(self.mp.trigger_hit(price,3))
+        self.mp.quantity = 0
+        self.assertFalse(self.mp.trigger_hit(200,3))
+        self.mp.quantity = 10
+        self.assertTrue(self.mp.trigger_hit(103,3))

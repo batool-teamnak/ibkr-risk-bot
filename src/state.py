@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Optional
+import math
 
 
 class State(Enum):
@@ -76,6 +77,9 @@ class ManagedPosition:
 
     def trigger_hit(self, last_price: float, trigger_pct: float) -> bool:
         """Returns True when the market price has reached the trigger threshold."""
+        if any(not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0
+               for v in (last_price, trigger_pct, self.entry_price)) or self.quantity == 0:
+            return False
         t = self.trigger_price(trigger_pct)
         return last_price >= t if self.is_long else last_price <= t
 
