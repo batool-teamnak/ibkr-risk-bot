@@ -137,3 +137,13 @@ class TradingTests(unittest.TestCase):
         self.assertFalse(self.mp.trigger_hit(200,3))
         self.mp.quantity = 10
         self.assertTrue(self.mp.trigger_hit(103,3))
+
+    def test_cleanup_is_idempotent_and_keeps_protective_orders(self):
+        contract = Contract(conId=1)
+        self.bot._tickers[1] = SimpleNamespace(contract=contract)
+        self.bot.close()
+        self.bot.close()
+        self.ib.cancelMktData.assert_called_once_with(contract)
+        self.ib.cancelOrder.assert_not_called()
+        self.assertEqual(len(self.ib.orderStatusEvent),0)
+        self.assertEqual(self.bot._tickers,{})

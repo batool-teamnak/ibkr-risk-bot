@@ -62,6 +62,7 @@ class RiskBot:
         # conid → ManagedPosition
         self._positions: Dict[int, ManagedPosition] = {}
         self._owned_order_ids = set()
+        self._closed = False
 
         # conid → Ticker (market data subscriptions, one per position)
         self._tickers: Dict[int, Ticker] = {}
@@ -74,6 +75,17 @@ class RiskBot:
         self.ib.positionEvent    += self._on_position_event
         self.ib.errorEvent       += self._on_error
 
+    def close(self):
+        """Release subscriptions and callbacks; protective orders remain active."""
+        if self._closed:
+            return
+        self._closed = True
+        for conid in list(self._tickers):
+            self._cancel_market_data(conid)
+        self.ib.orderStatusEvent -= self._on_order_status
+        self.ib.positionEvent -= self._on_position_event
+        self.ib.errorEvent -= self._on_error
+
     # ── Public entry point ───────────────────────────────────────────────────
 
     async def run_forever(self):
@@ -82,25 +94,28 @@ class RiskBot:
         # live data subscriptions. Switch to type 1 for live accounts with subscriptions.
         # 3 = delayed (15 min), 4 = delayed-frozen (last delayed when market closed).
         # Type 4 works on paper accounts in TWS without any data subscription.
-        self.ib.reqMarketDataType(4)
+        try:
+            self.ib.reqMarketDataType(4)
 
-        levels_desc = ", ".join(
-            f"L{i+1}: +{lv['trigger']}%→{lv['trailing']}% trail"
-            for i, lv in enumerate(self.trailing_levels)
-        )
-        log.info("Trailing levels: %s", levels_desc)
-        log.info("Protection check interval: %ds", self.protection_check_interval)
-        log.info("Bot started. Performing initial portfolio recovery scan…")
-        await self._recover()
+            levels_desc = ", ".join(
+                f"L{i+1}: +{lv['trigger']}%→{lv['trailing']}% trail"
+                for i, lv in enumerate(self.trailing_levels)
+            )
+            log.info("Trailing levels: %s", levels_desc)
+            log.info("Protection check interval: %ds", self.protection_check_interval)
+            log.info("Bot started. Performing initial portfolio recovery scan…")
+            await self._recover()
 
-        while True:
-            try:
-                await self._scan_positions()
-                await self._tick_all()
-                await self._maybe_check_protection()
-            except Exception as exc:
-                log.error("Unexpected error in main loop: %s", exc, exc_info=True)
-            await asyncio.sleep(self.poll_interval)
+            while True:
+                try:
+                    await self._scan_positions()
+                    await self._tick_all()
+                    await self._maybe_check_protection()
+                except Exception as exc:
+                    log.error("Unexpected error in main loop: %s", exc, exc_info=True)
+                await asyncio.sleep(self.poll_interval)
+        finally:
+            self.close()
 
     # ── Recovery (on start / reconnect) ─────────────────────────────────────
 
