@@ -403,3 +403,15 @@ NEW → MONITORING → CANCELLING → TRAILING → (closed)
 <!-- updated: 2026-05-30 -->
 
 
+
+## Offline protective-order regression checks
+
+Run `python -m unittest -v test_regressions` using fake broker clients.
+No TWS connection or live account is used by these checks.
+Replacement protection requires cancellation confirmations; fills are not
+treated as successful cancellations. API-cancelled orders are terminal.
+Orphan cleanup targets recognized OCA groups and adopted/created order IDs,
+preserving unrelated manual entries. Stop-loop cleanup leaves protective orders
+active while releasing subscriptions and callbacks. Recovered average-cost
+normalization and cross-account positions must still be checked for the traded
+instrument/account before deployment.
