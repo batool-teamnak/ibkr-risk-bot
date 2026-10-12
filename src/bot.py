@@ -268,6 +268,9 @@ class RiskBot:
         elif mp.state == State.NEEDS_TP:
             await self._place_missing_tp(mp)
 
+        elif mp.state == State.CANCELLING:
+            await self._cancel_oca_and_trail(mp)
+
         elif mp.state == State.MONITORING:
             if self.trail_rth_only and not self._is_rth():
                 log.debug("%s: outside RTH — trailing activation skipped, TP/SL remain active.", mp.symbol)
@@ -418,7 +421,7 @@ class RiskBot:
                             "%s: Timeout waiting for TP cancel (id=%d). Will retry.",
                             mp.symbol, mp.tp_order_id,
                         )
-                        mp.state = State.MONITORING
+                        mp.state = State.CANCELLING
                         return
                 else:
                     mp.tp_cancelled = True
@@ -441,7 +444,7 @@ class RiskBot:
                             "%s: Timeout waiting for SL cancel (id=%d). Will retry.",
                             mp.symbol, mp.sl_order_id,
                         )
-                        mp.state = State.MONITORING
+                        mp.state = State.CANCELLING
                         return
                 else:
                     mp.sl_cancelled = True
@@ -455,7 +458,7 @@ class RiskBot:
             # contract before placing the trailing stop. This catches untracked
             # orders from previous sessions that recovery may have missed.
             if not await self._cancel_all_protective_orders(mp):
-                mp.state = State.MONITORING
+                mp.state = State.CANCELLING
                 return
             first_trail_pct = self.trailing_levels[0]["trailing"]
             await self._place_trailing_stop(mp, first_trail_pct, level=0)

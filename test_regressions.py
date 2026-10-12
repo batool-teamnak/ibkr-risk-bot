@@ -95,7 +95,7 @@ class TradingTests(unittest.TestCase):
         with patch.object(self.bot,'_wait_cancel',new=AsyncMock(return_value=False)):
             asyncio.run(self.bot._cancel_oca_and_trail(self.mp))
         self.ib.placeOrder.assert_not_called()
-        self.assertEqual(self.mp.state,State.MONITORING)
+        self.assertEqual(self.mp.state,State.CANCELLING)
 
     def test_completed_trade_is_available_for_cancellation_checks(self):
         filled = self.trade(oid=7,status='Filled')
@@ -147,3 +147,12 @@ class TradingTests(unittest.TestCase):
         self.ib.cancelOrder.assert_not_called()
         self.assertEqual(len(self.ib.orderStatusEvent),0)
         self.assertEqual(self.bot._tickers,{})
+
+    def test_cancellation_transition_retries_even_when_price_is_unavailable(self):
+        self.mp.state = State.CANCELLING
+        self.mp.tp_cancelled = self.mp.sl_cancelled = True
+        with patch.object(self.bot,'_cancel_all_protective_orders',new=AsyncMock(return_value=True)), patch('src.bot.asyncio.sleep',new=AsyncMock()):
+            asyncio.run(self.bot._tick(self.mp))
+        self.assertEqual(self.mp.state,State.TRAILING)
+        self.ib.reqMktData.assert_not_called()
+        self.ib.placeOrder.assert_called_once()
